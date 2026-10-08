@@ -113,6 +113,8 @@ Long `text` values below are shortened with `…` for readability.
 | `GET` | [`/v1/hymns/{id}`](#get-v1hymnsid) | One hymn with verses and chorus |
 | `GET` | [`/v1/hymns/random`](#get-v1hymnsrandom) | A random hymn |
 | `GET` | [`/v1/search?q=`](#get-v1search) | Search the Bible and hymns at once |
+| `GET` | [`/v1/export.json`](#get-v1exportjson) | Everything in one file, for offline apps |
+| `GET` | [`/v1/export/version`](#get-v1exportversion) | Version of the export, to check for updates |
 
 ### General
 
@@ -436,6 +438,75 @@ curl "https://bible-hymns.emnextech.dev/v1/search?q=Romans%208:28"
 
 `verses` holds up to 10 matching verses and `hymns` up to 10 matching hymns (with `match` snippets); `reference` is `null` when `q` is not a reference.
 
+### Offline export
+
+For apps that must work without internet (mobile apps, church projector software). Download everything once, store it, and check for updates now and then.
+
+#### `GET /v1/export.json`
+
+The whole Bible and every hymn in a single file: about **4.2 MB**, **~1.2 MB over the network** (served compressed from Cloudflare's edge). `/v1/export` redirects here.
+
+```json
+{
+  "format": "bible-hymns-export",
+  "format_version": 1,
+  "version": "97ede3c62ecf",
+  "generated_at": "2026-10-08T08:03:46.618Z",
+  "counts": { "verses": 31102, "hymns": 121 },
+  "translations": [ { "id": "kjv", "name": "King James Version (1769)", "language": "en", "license": "Public Domain" } ],
+  "books": [ { "id": 1, "osis": "Gen", "name": "Genesis", "testament": "OT", "chapters": 50 }, … ],
+  "bible": {
+    "kjv": [
+      [ ["In the beginning God created the heaven and the earth.", "And the earth was without form, …", …], … ],
+      …
+    ]
+  },
+  "hymns": [
+    { "id": 1, "title": "Only Believe", "author": "Paul Rader", "year": 1921, "copyright": "Public Domain", "scripture": "Mark 5:36",
+      "source": null, "source_number": null, "parts": [ { "kind": "verse", "number": 1, "lines": ["Fear not, little flock, …", …] }, … ] },
+    …
+  ]
+}
+```
+
+The Bible is nested by position, so a verse is a direct lookup:
+
+```js
+const text = data.bible.kjv[book - 1][chapter - 1][verse - 1];
+data.bible.kjv[42][2][15]; // John 3:16
+```
+
+`hymns` have the same shape as [`/v1/hymns/{id}`](#get-v1hymnsid).
+
+#### `GET /v1/export/version`
+
+Tiny response (cached for 5 minutes) to check whether your stored copy is current:
+
+```json
+{
+  "version": "97ede3c62ecf",
+  "generated_at": "2026-10-08T08:03:46.618Z",
+  "counts": { "verses": 31102, "hymns": 121 },
+  "url": "/v1/export.json"
+}
+```
+
+`version` is a hash of the content: it changes only when the content changes, e.g. when hymns are added.
+
+```js
+const API = "https://bible-hymns.emnextech.dev";
+
+async function syncOffline(store) {
+  const { version } = await fetch(`${API}/v1/export/version`).then((r) => r.json());
+  if (version !== store.get("version")) {
+    const data = await fetch(`${API}/v1/export.json`).then((r) => r.json());
+    store.set("data", data);
+    store.set("version", data.version);
+  }
+  return store.get("data");
+}
+```
+
 ---
 
 ## Bible references
@@ -646,7 +717,7 @@ cd Bible-Hymns
 npm install
 
 npm run fetch:kjv      # download the KJV text into data/raw/kjv.json
-npm run seed:build     # build data/seed.sql from the KJV and data/hymns/*.json
+npm run seed:build     # build data/seed.sql and public/v1/export.json from the KJV and data/hymns/*.json
 npm run db:local       # create the schema and load the seed into a local D1 database
 npm run dev            # build the website and start http://localhost:8787
 ```
@@ -678,7 +749,7 @@ Everything fits in Cloudflare's free tier: the database is about 8 MB and the AP
 | `npm test` | Unit tests for the reference parser (Vitest) |
 | `npm run typecheck` | TypeScript check |
 | `npm run fetch:kjv` | Download the KJV JSON |
-| `npm run seed:build` | Generate `data/seed.sql` |
+| `npm run seed:build` | Generate `data/seed.sql` and the offline export `public/v1/export.json` |
 | `npm run db:local` / `db:remote` | Load schema + seed into local / remote D1 |
 | `npm run build:web` | Compile `web/index.html` → `public/index.html` |
 | `npm run hymns:fetch` | Download the hymnal scans (see [Adding hymns](#adding-hymns)) |

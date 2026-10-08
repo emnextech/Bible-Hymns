@@ -7,6 +7,12 @@ DROP TABLE IF EXISTS hymns;
 DROP TABLE IF EXISTS verses;
 DROP TABLE IF EXISTS books;
 DROP TABLE IF EXISTS translations;
+DROP TABLE IF EXISTS meta;
+
+CREATE TABLE meta (
+  key   TEXT PRIMARY KEY,               -- e.g. 'export_version'
+  value TEXT NOT NULL
+);
 
 CREATE TABLE translations (
   id        TEXT PRIMARY KEY,          -- e.g. 'kjv'

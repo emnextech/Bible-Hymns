@@ -5,3 +5,4 @@ data/raw/
 data/seed.sql
 showcase/
 public/index.html
+public/v1/export.json

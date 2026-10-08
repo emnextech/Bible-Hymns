@@ -1421,6 +1421,7 @@ const ENDPOINTS = [
   { id: 'hymn', group: 'Hymns', title: 'One hymn', path: '/v1/hymns/{id}', desc: 'A hymn with its verses and chorus, split into lines.', params: [P('id', 'path', '1')] },
   { id: 'random-hymn', group: 'Hymns', title: 'Random hymn', path: '/v1/hymns/random', desc: 'A random hymn. Never cached.', params: [] },
   { id: 'search', group: 'Everything', title: 'Search everything', path: '/v1/search', desc: 'Searches verses and hymns at once. If q is a Bible reference, the passage is returned too.', params: [P('q', 'query', 'grace'), P('translation', 'query', 'kjv', '', true)] },
+  { id: 'export-version', group: 'Offline', title: 'Export version', path: '/v1/export/version', desc: 'Version and counts of the offline export. Apps download /v1/export.json (the whole Bible and every hymn, one file) once, then poll this to know when to download again.', params: [] },
   { id: 'index', group: 'Everything', title: 'API index', path: '/v1', desc: 'Machine-readable list of every endpoint with an example.', params: [] },
 ];
 

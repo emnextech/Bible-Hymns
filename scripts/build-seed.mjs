@@ -1,6 +1,7 @@
 // Builds data/seed.sql from data/raw/kjv.json and data/hymns/*.json.
 // Usage: node scripts/build-seed.mjs
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BOOKS } from "../src/books.ts";
@@ -65,5 +66,44 @@ insertRows("hymns", ["id", "title", "first_line", "author", "year", "copyright",
 insertRows("hymn_parts", ["hymn_id", "position", "kind", "number", "text"], partRows);
 insertRows("hymns_fts", ["rowid", "title", "author", "lyrics"], ftsRows);
 
+// --- Offline export ---------------------------------------------------------
+// One static file with everything, served at /v1/export.json. Bible text is nested
+// by position: bible.kjv[book - 1][chapter - 1][verse - 1].
+const exportBody = {
+  translations: [{ id: "kjv", name: "King James Version (1769)", language: "en", license: "Public Domain" }],
+  books: BOOKS.map(({ id, osis, name, testament, chapters }) => ({ id, osis, name, testament, chapters })),
+  bible: { kjv: kjv.books.map((b) => b.chapters.map((c) => c.verses.map((v) => v.text.trim()))) },
+  hymns: hymns
+    .map((h) => {
+      let n = 0;
+      return {
+        id: h.id, title: h.title, author: h.author ?? null, year: h.year ?? null, copyright: h.copyright ?? "Public Domain",
+        scripture: h.scripture ?? null, source: h.source ?? null, source_number: h.source_number ?? null,
+        parts: h.parts.map((p) => ({ kind: p.kind, number: p.kind === "verse" ? ++n : null, lines: p.text.split("\n") })),
+      };
+    })
+    .sort((a, b) => a.id - b.id),
+};
+const version = createHash("sha256").update(JSON.stringify(exportBody)).digest("hex").slice(0, 12);
+const generatedAt = new Date().toISOString();
+const exportFile = {
+  format: "bible-hymns-export",
+  format_version: 1,
+  version,
+  generated_at: generatedAt,
+  counts: { verses: verses.length, hymns: hymnRows.length },
+  ...exportBody,
+};
+const exportJson = JSON.stringify(exportFile);
+mkdirSync(join(root, "public/v1"), { recursive: true });
+writeFileSync(join(root, "public/v1/export.json"), exportJson);
+insertRows("meta", ["key", "value"], [
+  ["export_version", version],
+  ["export_generated_at", generatedAt],
+  ["verse_count", String(verses.length)],
+  ["hymn_count", String(hymnRows.length)],
+]);
+
 writeFileSync(join(root, "data/seed.sql"), out.join("\n") + "\n");
 console.log(`Wrote data/seed.sql: ${verses.length} verses, ${hymnRows.length} hymns`);
+console.log(`Wrote public/v1/export.json: version ${version}, ${(Buffer.byteLength(exportJson) / 1048576).toFixed(1)} MB`);
