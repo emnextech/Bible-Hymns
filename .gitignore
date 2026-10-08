@@ -1,0 +1,7 @@
+node_modules/
+.wrangler/
+.dev.vars
+data/raw/
+data/seed.sql
+showcase/
+public/index.html

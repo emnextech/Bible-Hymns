@@ -1,0 +1,35 @@
+{
+  "name": "bible-hymns-api",
+  "version": "1.0.0",
+  "description": "Bible (KJV) and public-domain hymns API on Cloudflare Workers + D1",
+  "scripts": {
+    "dev": "npm run build:web && wrangler dev",
+    "deploy": "npm run build:web && wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc",
+    "fetch:kjv": "node -e \"fetch('https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/KJV.json').then(r=>r.text()).then(t=>{require('fs').mkdirSync('data/raw',{recursive:true});require('fs').writeFileSync('data/raw/kjv.json',t)})\"",
+    "seed:build": "node scripts/build-seed.mjs",
+    "db:local": "wrangler d1 execute bible-hymns --local --file schema.sql -y && wrangler d1 execute bible-hymns --local --file data/seed.sql -y",
+    "db:remote": "wrangler d1 execute bible-hymns --remote --file schema.sql -y && wrangler d1 execute bible-hymns --remote --file data/seed.sql -y",
+    "build:web": "node scripts/build-web.mjs",
+    "hymns:fetch": "node scripts/hymnal/fetch-scans.mjs",
+    "hymns:segment": "node scripts/hymnal/segment.mjs",
+    "hymns:build": "node scripts/hymnal/build.mjs"
+  },
+  "type": "module",
+  "dependencies": {
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261007.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "wrangler": "^4.148.0"
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emnextech/Bible-Hymns.git"
+  },
+  "homepage": "https://bible-hymns.emnextech.dev"
+}

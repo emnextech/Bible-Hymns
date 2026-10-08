@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bible-hymns-api",
+  "account_id": "1501811321479650733a3d20fa57f517",
+  "main": "src/index.ts",
+  "assets": { "directory": "./public" },
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "routes": [{ "pattern": "bible-hymns.emnextech.dev", "custom_domain": true }],
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bible-hymns",
+      "database_id": "376895ef-a60b-491d-ab40-55590f07716e"
+    }
+  ]
+}
