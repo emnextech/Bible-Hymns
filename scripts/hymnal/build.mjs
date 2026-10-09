@@ -18,6 +18,8 @@ const SRC = join(root, "data/hymns-src/gospel-hymns");
 const SOURCE = "Gospel Hymns Nos. 1 to 6 (1895)";
 const ID_OFFSET = 22; // book hymn N gets id 22 + N; ids 1-22 are the hand-entered starter set
 
+// Same hymn as a starter but with a differently worded first line in the 1895 book (book number -> starter id).
+const KNOWN_DUPLICATES = { 195: 7 };
 const segments = JSON.parse(readFileSync(join(root, "data/raw/gospel-hymns/segments.json"), "utf8"));
 const existing = JSON.parse(readFileSync(join(root, "data/hymns/public-domain.json"), "utf8"));
 const firstLineKey = (s) => s.toLowerCase().replace(/[^a-z]/g, "").slice(0, 40);
@@ -59,11 +61,13 @@ function parse(text) {
 const out = [], report = [], skipped = [];
 for (const file of readdirSync(SRC).filter((f) => f.endsWith(".txt")).sort()) {
   for (const h of parse(readFileSync(join(SRC, file), "utf8"))) {
-    const seg = segments[h.number - 1];
+    let seg = segments[h.number - 1];
     if (!seg) throw new Error(`No segment for hymn ${h.number}`);
+    // A few hymns were merged into the previous hymn's segment by the scans; verify against that one.
+    if (!seg.a && !seg.b) seg = { a: segments[h.number - 2]?.a, b: segments[h.number - 2]?.b };
     if (!h.parts.length) throw new Error(`Hymn ${h.number} has no text`);
     const first = h.parts[0].text.split("\n")[0];
-    const dup = existingKeys.get(firstLineKey(first));
+    const dup = KNOWN_DUPLICATES[h.number] ?? existingKeys.get(firstLineKey(first));
     if (dup) { skipped.push(`${h.number} (same as starter hymn ${dup})`); continue; }
 
     // Verification against both scans

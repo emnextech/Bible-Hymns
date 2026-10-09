@@ -3,6 +3,8 @@ node_modules/
 .dev.vars
 data/raw/
 data/seed.sql
+data/publish.sql
 showcase/
 public/index.html
 public/v1/export.json
+.claude/

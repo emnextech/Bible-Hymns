@@ -10,7 +10,7 @@
     "fetch:kjv": "node -e \"fetch('https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/KJV.json').then(r=>r.text()).then(t=>{require('fs').mkdirSync('data/raw',{recursive:true});require('fs').writeFileSync('data/raw/kjv.json',t)})\"",
     "seed:build": "node scripts/build-seed.mjs",
     "db:local": "wrangler d1 execute bible-hymns --local --file schema.sql -y && wrangler d1 execute bible-hymns --local --file data/seed.sql -y",
-    "db:remote": "wrangler d1 execute bible-hymns --remote --file schema.sql -y && wrangler d1 execute bible-hymns --remote --file data/seed.sql -y",
+    "db:remote": "wrangler d1 execute bible-hymns --remote --file data/publish.sql -y",
     "build:web": "node scripts/build-web.mjs",
     "hymns:fetch": "node scripts/hymnal/fetch-scans.mjs",
     "hymns:segment": "node scripts/hymnal/segment.mjs",

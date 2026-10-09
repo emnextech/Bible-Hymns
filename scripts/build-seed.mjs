@@ -106,4 +106,9 @@ insertRows("meta", ["key", "value"], [
 
 writeFileSync(join(root, "data/seed.sql"), out.join("\n") + "\n");
 console.log(`Wrote data/seed.sql: ${verses.length} verses, ${hymnRows.length} hymns`);
+
+// Schema + data in one file, so a remote load uploads everything before it touches the live tables
+// (they are only empty while D1 runs the file, not during a slow upload).
+writeFileSync(join(root, "data/publish.sql"), readFileSync(join(root, "schema.sql"), "utf8") + "\n" + out.join("\n") + "\n");
+console.log("Wrote data/publish.sql (schema + seed, used by db:remote)");
 console.log(`Wrote public/v1/export.json: version ${version}, ${(Buffer.byteLength(exportJson) / 1048576).toFixed(1)} MB`);
